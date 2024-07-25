@@ -20,8 +20,14 @@ class MultitenancyServiceProvider extends PackageServiceProvider
     {
         $package
             ->name('laravel-multitenancy')
-            ->hasConfigFile()
-            ->hasMigration('landlord/create_landlord_tenants_table')
+            ->hasConfigFile([
+                'multitenancy',
+                'database.connections',
+            ])
+            ->hasMigrations([
+                'landlord/create_landlord_tenants_table',
+                'landlord/create_landlord_domains_table',
+            ])
             ->hasCommand(TenantsArtisanCommand::class);
     }
 

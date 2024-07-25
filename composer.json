@@ -1,5 +1,5 @@
 {
-    "name": "spatie/laravel-multitenancy",
+    "name": "processmaker/package-multitenancy",
     "description": "Make your Laravel app usable by multiple tenants",
     "keywords": [
         "spatie",

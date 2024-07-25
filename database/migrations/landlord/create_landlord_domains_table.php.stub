@@ -8,13 +8,14 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     *
      */
-    public function up()
+    public function up(): void
     {
-        Schema::create('tenants', function (Blueprint $table) {
-            $table->id();
+        Schema::create('domains', function (Blueprint $table) {
+            $table->increments('id');
             $table->string('name')->unique();
-            $table->string('status')->default('active');
+            $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
         });
     }
@@ -25,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tenants');
+        Schema::dropIfExists('domains');
     }
 };
