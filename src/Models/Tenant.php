@@ -4,6 +4,7 @@ namespace Spatie\Multitenancy\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Multitenancy\Actions\ForgetCurrentTenantAction;
 use Spatie\Multitenancy\Actions\MakeTenantCurrentAction;
 use Spatie\Multitenancy\Models\Concerns\UsesLandlordConnection;
@@ -13,6 +14,25 @@ class Tenant extends Model
 {
     use UsesLandlordConnection;
     use HasFactory;
+
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+
+        if (! empty(config('multitenancy.tenant_table_name'))) {
+            $this->table = config('multitenancy.tenant_table_name');
+        }
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
+    public function domains(): HasMany
+    {
+        return $this->hasMany(Domain::class);
+    }
 
     public function makeCurrent(): static
     {
@@ -80,7 +100,7 @@ class Tenant extends Model
 
     public function getDatabaseName(): string
     {
-        return $this->database;
+        return config('multitenancy.database_prefix') . $this->name;
     }
 
     public function newCollection(array $models = []): TenantCollection

@@ -26,7 +26,8 @@ class Multitenancy
             ->registerTenantFinder()
             ->registerTasksCollection()
             ->configureRequests()
-            ->configureQueue();
+            ->configureQueue()
+            ->configureMiddlewares();
     }
 
     public function end(): void
@@ -91,6 +92,20 @@ class Multitenancy
                 actionClass: MakeQueueTenantAwareAction::class
             )
             ->execute();
+
+        return $this;
+    }
+
+    protected function configureMiddlewares(): self
+    {
+        $tenancyMiddleware = [
+            Http\Middleware\NeedsTenant::class,
+            Http\Middleware\EnsureValidTenantSession::class,
+        ];
+
+        foreach ($tenancyMiddleware as $middleware) {
+            $this->app[\Illuminate\Contracts\Http\Kernel::class]->appendMiddlewareToGroup('web', $middleware);
+        }
 
         return $this;
     }
