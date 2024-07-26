@@ -118,4 +118,6 @@ return [
     'database_prefix' => env('MULTITENANCY_DATABASE_PREFIX'),
 
     'tenant_table_name' => env('MULTITENANCY_TENANT_TABLE_NAME'),
+
+    'stm_enabled' => env('MULTITENANCY_STM_ENABLED', false),
 ];
