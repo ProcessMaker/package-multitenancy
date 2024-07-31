@@ -117,7 +117,11 @@ return [
 
     'database_prefix' => env('MULTITENANCY_DATABASE_PREFIX'),
 
+    'tenant_domain' => env('MULTITENANCY_TENANT_DOMAIN', '.processmaker.io'),
+
     'tenant_table_name' => env('MULTITENANCY_TENANT_TABLE_NAME'),
+
+    'tenant_relation_id' => env('MULTITENANCY_TENANT_RELATION_ID'),
 
     'stm_enabled' => env('MULTITENANCY_STM_ENABLED', false),
 ];

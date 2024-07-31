@@ -2,7 +2,6 @@
 
 namespace Spatie\Multitenancy\Commands;
 
-use Artisan;
 use ProcessMaker\Console\PackageInstallCommand;
 
 class Install extends PackageInstallCommand
@@ -27,13 +26,7 @@ class Install extends PackageInstallCommand
      */
     public function publishAssets()
     {
-        if (! config('multitenancy.stm_enabled')) {
-            $this->info('Publishing multitenancy-migrations');
-            Artisan::call('vendor:publish', [
-                '--provider' => 'Spatie\Multitenancy\MultitenancyServiceProvider',
-                '--tag' => 'multitenancy-migrations',
-            ]);
-        }
+
     }
 
     public function preinstall()
@@ -43,6 +36,7 @@ class Install extends PackageInstallCommand
 
     public function install()
     {
+
     }
 
     public function postinstall()
