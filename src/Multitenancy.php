@@ -27,7 +27,9 @@ class Multitenancy
             ->registerTasksCollection()
             ->configureRequests()
             ->configureQueue()
-            ->configureMiddlewares();
+            ->configureMiddlewares()
+            ->overwriteEnvironmentConfig()
+            ->overwriteStoragePaths();
     }
 
     public function end(): void
@@ -105,6 +107,58 @@ class Multitenancy
 
         foreach ($tenancyMiddleware as $middleware) {
             $this->app[\Illuminate\Contracts\Http\Kernel::class]->appendMiddlewareToGroup('web', $middleware);
+        }
+
+        return $this;
+    }
+
+    public function overwriteEnvironmentConfig(): self
+    {
+        $tenant = Tenant::current();
+        if ($tenant) {
+            if ($this->app['config']->get('horizon.prefix')) {
+                $this->app['config']->set('horizon.prefix', "hzn-{$tenant->name}:");
+            }
+            if ($this->app['config']->get('intercom.company')) {
+                $this->app['config']->set('intercom.company', $tenant->name);
+            }
+            if ($this->app['config']->get('app.pm_analytics_dashboard')) {
+                $this->app['config']->set('app.pm_analytics_dashboard', 'https://us-east-1.quicksight.aws.amazon.com/' . $tenant->name);
+            }
+            //TODO: We need to include the subdomain concept in the app.url and app.docker_host_url
+            if ($this->app['config']->get('app.url')) {
+                $this->app['config']->set('app.url', $tenant->domains->first()->name);
+            }
+            if ($this->app['config']->get('app.docker_host_url')) {
+                $this->app['config']->set('app.docker_host_url', $tenant->domains->first()->name);
+            }
+        }
+
+        return $this;
+    }
+
+    public function overwriteStoragePaths(): self
+    {
+        $tenant = Tenant::current();
+        //TODO: we need to change the order where the tenant is set as current on the folder structure
+        if ($tenant) {
+            // Overwrite filesystem public path
+            $this->app['config']->set('filesystems.disks.public.root', storage_path("app/public/{$tenant->name}"));
+            $this->app['config']->set('filesystems.disks.public.url', env('APP_URL') . "/storage/{$tenant->name}");
+
+            // Overwrite filesystem profile path
+            $this->app['config']->set('filesystems.disks.profile.root', storage_path("app/public/{$tenant->name}/profile"));
+            $this->app['config']->set('filesystems.disks.profile.url', env('APP_URL') . "/storage/{$tenant->name}/profile");
+
+            // Overwrite filesystem public settings path
+            $this->app['config']->set('filesystems.disks.settings.root', storage_path("app/public/{$tenant->name}/settings"));
+            $this->app['config']->set('filesystems.disks.settings.url', env('APP_URL') . "/storage/{$tenant->name}/setting");
+
+            $this->app['config']->set('filesystems.disks.private_settings.root', storage_path("app/private/{$tenant->name}/settings"));
+
+            $this->app['config']->set('filesystems.disks.web_services.root', storage_path("app/private/{$tenant->name}/web_services"));
+
+            $this->app['config']->set('app.instance', $this->app['config']->get('multitenancy.tenant_master_database'));
         }
 
         return $this;
