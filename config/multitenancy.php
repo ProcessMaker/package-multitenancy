@@ -25,7 +25,7 @@ return [
      * These fields are used by tenant:artisan command to match one or more tenant.
      */
     'tenant_artisan_search_fields' => [
-        'id',
+        'name',
     ],
 
     /*
@@ -113,6 +113,84 @@ return [
      */
     'not_tenant_aware_jobs' => [
         // ...
+    ],
+
+    /**
+     * Filesystem multitenancy config.
+     */
+    'filesystem' => [
+        /**
+         * Each disk listed in the 'disks' array will be overridden.
+         */
+        'disks' => [
+            'public',
+            'profile',
+            'settings',
+            'private_settings',
+            'web_services',
+            'tmp',
+            'samlidp',
+            'decision_tables',
+        ],
+        /**
+         * Use this for local disks.
+         */
+        'overwrite' => [
+            'public' => [
+                'root' => 'app/public/%tenant%',
+                'url' => '/storage/%tenant%',
+            ],
+            'profile' => [
+                'root' => 'app/public/%tenant%/profile',
+                'url' => '/storage/%tenant%/profile',
+            ],
+            'settings' => [
+                'root' => 'app/public/%tenant%/setting',
+                'url' => '/storage/%tenant%/setting',
+            ],
+
+            'private_settings' => [
+                'root' => 'app/private/%tenant%/settings',
+            ],
+
+            'web_services' => [
+                'root' => 'app/private/%tenant%/web_services',
+            ],
+
+            'tmp' => [
+                'root' => 'app/public/%tenant%/tmp',
+                'url' => '/storage/%tenant%/tmp',
+            ],
+
+            'samlidp' => [
+                'root' => '/%tenant%/samlidp',
+            ],
+
+            'decision_tables' => [
+                'root' => '%tenant%/decision-tables',
+                'url' => '/storage/%tenant%/decision-tables',
+            ],
+        ],
+
+        /**
+         * Should storage_path() be suffixed.
+         *
+         * Note: Disabling this will likely break local disk tenancy. Only disable this if you're using an external file storage service like S3.
+         *
+         * For the vast majority of applications, this feature should be enabled. But in some
+         * edge cases, it can cause issues (like using Passport with Vapor - see #196), so
+         * you may want to disable this if you are experiencing these edge case issues.
+         */
+        'suffix_storage_path' => true,
+
+        /**
+         * By default, asset() calls are made multi-tenant too. You can use global_asset() and mix()
+         * for global, non-tenant-specific assets. However, you might have some issues when using
+         * packages that use asset() calls inside the tenant app. To avoid such issues, you can
+         * disable asset() helper tenancy and explicitly use tenant_asset() calls in places
+         * where you want to use tenant-specific assets (product images, avatars, etc).
+         */
+        'asset_helper_tenancy' => true,
     ],
 
     'database_prefix' => env('MULTITENANCY_DATABASE_PREFIX'),

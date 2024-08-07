@@ -3,6 +3,7 @@
 namespace Spatie\Multitenancy;
 
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Multitenancy\Actions\MakeQueueTenantAwareAction;
 use Spatie\Multitenancy\Concerns\UsesMultitenancyConfig;
 use Spatie\Multitenancy\Events\TenantNotFoundForRequestEvent;
@@ -29,7 +30,7 @@ class Multitenancy
             ->configureQueue()
             ->configureMiddlewares()
             ->overwriteEnvironmentConfig()
-            ->overwriteStoragePaths();
+            ->overwriteFilesystemConfig();
     }
 
     public function end(): void
@@ -39,11 +40,11 @@ class Multitenancy
 
     protected function determineCurrentTenant(): void
     {
-        if (! $this->app['config']->get('multitenancy.tenant_finder')) {
+        if (!$this->app['config']->get('multitenancy.tenant_finder')) {
             return;
         }
 
-        /** @var \Spatie\Multitenancy\TenantFinder\TenantFinder $tenantFinder */
+        /** @var TenantFinder $tenantFinder */
         $tenantFinder = $this->app[TenantFinder::class];
 
         $tenant = $tenantFinder->findForRequest($this->app['request']);
@@ -79,7 +80,7 @@ class Multitenancy
 
     protected function configureRequests(): self
     {
-        if (! $this->app->runningInConsole()) {
+        if (!$this->app->runningInConsole()) {
             $this->determineCurrentTenant();
         }
 
@@ -137,28 +138,46 @@ class Multitenancy
         return $this;
     }
 
-    public function overwriteStoragePaths(): self
+    public function overwriteFilesystemConfig(): self
     {
+        $originalPaths = [
+            'disks' => [],
+            'storage' => $this->app->storagePath(),
+            'asset_url' => $this->app['config']['app.asset_url'],
+        ];
+
         $tenant = Tenant::current();
-        //TODO: we need to change the order where the tenant is set as current on the folder structure
+
         if ($tenant) {
-            // Overwrite filesystem public path
-            $this->app['config']->set('filesystems.disks.public.root', storage_path("app/public/{$tenant->name}"));
-            $this->app['config']->set('filesystems.disks.public.url', env('APP_URL') . "/storage/{$tenant->name}");
+            // Storage facade
+            Storage::forgetDisk($this->app['config']['multitenancy.filesystem.disks']);
 
-            // Overwrite filesystem profile path
-            $this->app['config']->set('filesystems.disks.profile.root', storage_path("app/public/{$tenant->name}/profile"));
-            $this->app['config']->set('filesystems.disks.profile.url', env('APP_URL') . "/storage/{$tenant->name}/profile");
+            foreach ($this->app['config']['multitenancy.filesystem.disks'] as $disk) {
+                $originalRoot = $this->app['config']["filesystems.disks.{$disk}.root"];
+                $originalUrl = $this->app['config']["filesystems.disks.{$disk}.url"];
+                $originalPaths['disks'][$disk] = [
+                    'root' =>$originalRoot,
+                    'url' => $originalUrl,
+                ];
 
-            // Overwrite filesystem public settings path
-            $this->app['config']->set('filesystems.disks.settings.root', storage_path("app/public/{$tenant->name}/settings"));
-            $this->app['config']->set('filesystems.disks.settings.url', env('APP_URL') . "/storage/{$tenant->name}/setting");
+                $rootOverwrite = str_replace(
+                    '%tenant%',
+                    $tenant->name,
+                    $this->app['config']["multitenancy.filesystem.overwrite.{$disk}.root"] ?? '',
+                );
 
-            $this->app['config']->set('filesystems.disks.private_settings.root', storage_path("app/private/{$tenant->name}/settings"));
+                $urlOverwrite = str_replace(
+                    '%tenant%',
+                    $tenant->name,
+                    $this->app['config']["multitenancy.filesystem.overwrite.{$disk}.url"] ?? '',
+                );
 
-            $this->app['config']->set('filesystems.disks.web_services.root', storage_path("app/private/{$tenant->name}/web_services"));
+                $this->app['config']["filesystems.disks.{$disk}.root"] = storage_path($rootOverwrite);
 
-            $this->app['config']->set('app.instance', $this->app['config']->get('multitenancy.tenant_master_database'));
+                if ((bool) $urlOverwrite) {
+                    $this->app['config']["filesystems.disks.{$disk}.url"] = env('APP_URL') . $urlOverwrite;
+                }
+            }
         }
 
         return $this;
