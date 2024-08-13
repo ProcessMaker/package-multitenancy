@@ -117,6 +117,7 @@ class Multitenancy
     {
         $tenant = Tenant::current();
         if ($tenant) {
+            $domain = 'https://' . $tenant->domains->first()->name;
             if ($this->app['config']->get('horizon.prefix')) {
                 $this->app['config']->set('horizon.prefix', "hzn-{$tenant->name}:");
             }
@@ -128,10 +129,10 @@ class Multitenancy
             }
             //TODO: We need to include the subdomain concept in the app.url and app.docker_host_url
             if ($this->app['config']->get('app.url')) {
-                $this->app['config']->set('app.url', $tenant->domains->first()->name);
+                $this->app['config']->set('app.url', $domain);
             }
             if ($this->app['config']->get('app.docker_host_url')) {
-                $this->app['config']->set('app.docker_host_url', $tenant->domains->first()->name);
+                $this->app['config']->set('app.docker_host_url', $domain);
             }
         }
 

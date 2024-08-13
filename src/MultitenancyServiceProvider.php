@@ -41,7 +41,8 @@ class MultitenancyServiceProvider extends PackageServiceProvider
     {
         $this->app->bind(Multitenancy::class, fn ($app) => new Multitenancy($app));
 
-        if (! isset($_SERVER['LARAVEL_OCTANE'])) {
+        if (!isset($_SERVER['LARAVEL_OCTANE'])) {
+            \Log::debug('Multitenancy is begin started');
             app(Multitenancy::class)->start();
 
             return;
