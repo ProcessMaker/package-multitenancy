@@ -18,10 +18,11 @@ trait TenantAware
         $tenants = Arr::wrap($this->option('tenant'));
 
         $tenantQuery = $this->getTenantModel()::query()
-            ->when(! blank($tenants), function ($query) use ($tenants) {
+            ->when(!blank($tenants), function ($query) use ($tenants) {
                 collect($this->getTenantArtisanSearchFields())
                     ->each(fn ($field) => $query->orWhereIn($field, $tenants));
-            });
+            })
+            ->active();
 
         if ($tenantQuery->count() === 0) {
             $this->error('No tenant(s) found.');
